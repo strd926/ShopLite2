@@ -1,6 +1,7 @@
 package com.darwinruiz.shoplite.controllers;
 
 import com.darwinruiz.shoplite.models.Product;
+import com.darwinruiz.shoplite.repositories.IProductRepository;
 import com.darwinruiz.shoplite.repositories.ProductRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -14,17 +15,12 @@ import java.util.List;
 
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
-    private final ProductRepository repo = new ProductRepository();
+    private final IProductRepository repo = new ProductRepository();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        List<Product> all = repo.findAll();
-        if (all == null) {
-            all = Collections.emptyList();
-        }
-
         int defaultPage = 1;
-        int defaultSize = 10;
+        int defaultSize = 6;
 
         int page;
         try {
@@ -33,6 +29,7 @@ public class HomeServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             page = defaultPage;
         }
+
         int size;
         try {
             size = req.getParameter("size") != null ? Integer.parseInt(req.getParameter("size")) : defaultSize;
@@ -41,19 +38,27 @@ public class HomeServlet extends HttpServlet {
             size = defaultSize;
         }
 
-        int total = all.size();
-        List<Product> items = all.stream()
-                .skip((long) (page - 1) * size)
-                .limit(size)
-                .toList();
+        int offset = (page - 1) * size;
 
-        // Set attributes for JSP
+        List<Product> items;
+        int total;
+        int totalPages;
+        try {
+            items = repo.findAll(offset, size);
+            total = repo.countAll();
+            totalPages = (total + size - 1) / size;
+        } catch (Exception e) {
+            items = Collections.emptyList();
+            total = 0;
+            totalPages = 0;
+            req.setAttribute("error", "Error al cargar productos: " + e.getMessage());
+        }
+
         req.setAttribute("items", items);
         req.setAttribute("page", page);
         req.setAttribute("size", size);
         req.setAttribute("total", total);
 
-        // Forward to JSP
         req.getRequestDispatcher("/home.jsp").forward(req, resp);
     }
 }

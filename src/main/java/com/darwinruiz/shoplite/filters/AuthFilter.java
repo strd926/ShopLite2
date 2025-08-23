@@ -9,15 +9,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Requisito: bloquear todo lo no público si no existe una sesión con auth=true.
- */
 public class AuthFilter implements Filter {
     private static final List<String> PUBLIC_URIS = Arrays.asList(
             "/index.jsp",
             "/login.jsp",
+            "/register.jsp",
             "/auth/login",
             "/auth/logout",
+            "/register",
             "/"
     );
 
@@ -29,18 +28,16 @@ public class AuthFilter implements Filter {
 
         String contextPath = request.getContextPath();
         String uri = request.getRequestURI();
-        String relativeUri = uri.startsWith(contextPath) && contextPath.length() > 0
+        String relativeUri = uri.startsWith(contextPath) && !contextPath.isEmpty()
                 ? uri.substring(contextPath.length()) : uri;
 
-        boolean esPublica =
-                uri.endsWith("/index.jsp") || uri.endsWith("/login.jsp") ||
-                        uri.contains("/auth/login") || uri.endsWith("/");
 
-        if (esPublica) {
+        if (PUBLIC_URIS.contains(relativeUri)) {
             chain.doFilter(req, res);
             return;
         }
 
+        // Verifica la autenticación
         HttpSession session = request.getSession(false);
         boolean isAuthenticated = session != null && Boolean.TRUE.equals(session.getAttribute("auth"));
 
@@ -49,7 +46,5 @@ public class AuthFilter implements Filter {
         } else {
             response.sendRedirect(contextPath + "/login.jsp");
         }
-
-
     }
 }

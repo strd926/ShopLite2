@@ -26,14 +26,19 @@
             <form method="post" action="${pageContext.request.contextPath}/admin" class="row g-3">
                 <div class="col-12">
                     <label class="form-label">Nombre</label>
-                    <input class="form-control" name="name" placeholder="Teclado 60%">
+                    <input class="form-control" name="name" placeholder="Ingrese Producto">
                 </div>
                 <div class="col-12">
                     <label class="form-label">Precio</label>
-                    <input class="form-control" name="price" placeholder="59.99">
+                    <input class="form-control" name="price" placeholder="Precio del Producto">
                 </div>
                 <div class="col-12">
+                    <label class="form-label">Stock</label>
+                    <input class="form-control" type="number" name="stock" min="0"><br>
+                </div>
+                <div class="d-flex gap-2">
                     <button class="btn btn-primary">Guardar</button>
+                    <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">Volver a Inicio</a>
                 </div>
             </form>
         </div>

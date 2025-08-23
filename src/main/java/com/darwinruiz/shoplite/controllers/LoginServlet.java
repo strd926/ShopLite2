@@ -1,6 +1,7 @@
 package com.darwinruiz.shoplite.controllers;
 
 import com.darwinruiz.shoplite.models.User;
+import com.darwinruiz.shoplite.repositories.IUserRepository;
 import com.darwinruiz.shoplite.repositories.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,34 +13,31 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Optional;
 
-/**
- * Requisito: autenticar, regenerar sesión y guardar auth, userEmail, role, TTL.
- */
 @WebServlet("/auth/login")
 public class LoginServlet extends HttpServlet {
-    private final UserRepository users = new UserRepository();
+    private final IUserRepository users = new UserRepository();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String email = req.getParameter("email");
-        String pass = req.getParameter("password");
+        String username = req.getParameter("username");
+        String password = req.getParameter("password");
         String contextPath = req.getContextPath();
 
-        if (email == null || pass == null || email.isEmpty() || pass.isEmpty()) {
+        if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
             resp.sendRedirect(contextPath + "/login.jsp?err=1");
             return;
         }
 
-        Optional<User> userOpt = users.findByEmail(email);
-        if (userOpt.isPresent() && userOpt.get().getPassword().equals(pass)) {
+        Optional<User> userOpt = users.findByUsername(username);
+        if (userOpt.isPresent() && userOpt.get().getPassword().equals(password) && userOpt.get().isActive()) {
             HttpSession oldSession = req.getSession(false);
-            if (oldSession != null){
+            if (oldSession != null) {
                 oldSession.invalidate();
             }
 
             HttpSession newSession = req.getSession(true);
             newSession.setAttribute("auth", true);
-            newSession.setAttribute("userEmail", userOpt.get().getEmail());
+            newSession.setAttribute("username", userOpt.get().getUsername());
             newSession.setAttribute("role", userOpt.get().getRole());
             newSession.setMaxInactiveInterval(30 * 60);
 
@@ -47,15 +45,6 @@ public class LoginServlet extends HttpServlet {
         } else {
             resp.sendRedirect(contextPath + "/login.jsp?err=1");
         }
-
-
-        // Requisito:
-        //  - Si credenciales inválidas → redirect a login.jsp?err=1
-        //  - Si válidas → invalidar sesión previa, crear nueva y setear:
-        //      auth=true, userEmail, role, maxInactiveInterval (p.ej. 30 min)
-        //  - Redirigir a /home
-
-//        resp.sendRedirect(req.getContextPath() + "/home"); // temporal para compilar
     }
 
     @Override

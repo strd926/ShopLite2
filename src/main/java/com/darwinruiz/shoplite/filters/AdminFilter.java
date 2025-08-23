@@ -7,32 +7,28 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-/**
- * Requisito: permitir /admin solo a usuarios con rol "ADMIN"; los demás ven 403.jsp.
- */
 public class AdminFilter implements Filter {
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
-        HttpServletRequest r = (HttpServletRequest) req;
-        HttpServletResponse p = (HttpServletResponse) res;
+        HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
 
-        HttpSession session = r.getSession(false);
+        HttpSession session = request.getSession(false);
         boolean isAuthenticated = session != null && Boolean.TRUE.equals(session.getAttribute("auth"));
 
+        // Si no hay sesion, redirige a login
         if (!isAuthenticated) {
-            chain.doFilter(req, res);
+            response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
+        // verifica si el user tienen ADMIN role
         String role = (String) session.getAttribute("role");
-        if("ADMIN".equals(role)) {
+        if ("ADMIN".equals(role)) {
             chain.doFilter(req, res);
         } else {
-            r.getRequestDispatcher("/403.jsp").forward(req, res);
+            request.getRequestDispatcher("/403.jsp").forward(req, res);
         }
-
-        // Requisito: validar sesión existente y atributo "role" con valor "ADMIN".
-        // Si no cumple, hacer forward a /403.jsp. Si cumple, continuar.
     }
 }
